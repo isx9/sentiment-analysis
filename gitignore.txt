@@ -1,0 +1,15 @@
+# Dataset (download separately, see data/README.md)
+dataset.csv
+data/*.csv
+
+# Spark / streaming runtime artifacts
+/tmp/
+spark_checkpoint*/
+.ipynb_checkpoints/
+
+# OS / editor junk
+.DS_Store
+__pycache__/
+*.pyc
+.vscode/
+.idea/
