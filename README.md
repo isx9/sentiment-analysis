@@ -1,8 +1,10 @@
 # Sentiment Analysis of Tweets with Spark + Kafka
 
-![Python](https://img.shields.io/badge/python-3.10+-blue)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5.1-E25A1C?logo=apachespark&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-streaming-231F20?logo=apachekafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Kafka%20broker-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-academic%20project-orange)
 
 Multiclass sentiment classification (positive / negative / uncertainty / litigious) on tweets, combining an offline Spark ML training pipeline with a real-time Kafka + Spark Structured Streaming inference pipeline.
 
