@@ -1,80 +1,120 @@
 # Sentiment Analysis of Tweets with Spark + Kafka
 
-Multiclass sentiment classification (positive / negative / uncertainty /
-litigious) on tweets, built for the Hardware and Software for Big Data
-course. Combines an offline Spark ML training pipeline with a real-time
-Kafka + Spark Structured Streaming inference pipeline.
+![Python](https://img.shields.io/badge/python-3.10+-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-academic%20project-orange)
 
-## Project structure
+Multiclass sentiment classification (positive / negative / uncertainty / litigious) on tweets, combining an offline Spark ML training pipeline with a real-time Kafka + Spark Structured Streaming inference pipeline.
 
-.
-├── sentiment_analysis_testing.ipynb # main notebook: training + streaming inference
+Built for the Hardware and Software for Big Data course at the University of Naples Federico II (2026).
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Dataset](#dataset)
+- [How to Run](#how-to-run)
+- [Results](#results)
+- [Documentation](#documentation)
+- [License](#license)
+
+## Architecture
+
+```
+Kafka Producer (producer.py)
+|
+v
+Kafka Topic: tweets-input
+|
+v
+Spark Structured Streaming (micro-batches)
+|
+v
+Fitted ML Pipeline (Tokenizer → StopWordsRemover → CountVectorizer → IDF → LogisticRegression)
+|
+v
+Predicted Sentiment + Class Probabilities
+```
+
+
+The same pipeline is trained and evaluated offline on a static 80/20 train/test split, then reused unmodified at inference time — so streaming predictions use an identical feature representation and decision boundary
+to the one validated during batch evaluation.
+
+## Project Structure
+
+```
+├── sentiment_analysis.ipynb # main notebook: training + streaming inference
 ├── docker-compose.yml # local single-node Kafka broker
 ├── producer.py # publishes tweets into Kafka for the streaming demo
-├── dataset.csv # tweet dataset (see Data source below)
+├── requirements.txt
+├── LICENSE
+├── .gitignore
+├── doc/
+│ └── project_report.pdf # full write-up: challenge, methodology, results
+├── data/
+│ └── README.md # where to download the dataset
 └── README.md
+```
 
 
-## Requirements
+## Technology Stack
 
-- Python 3.10+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- PySpark (`pip install pyspark`)
-- `kafka-python` (`pip install kafka-python`)
-- Jupyter (`pip install jupyterlab`)
+- **Apache Spark (PySpark)** — batch training + Structured Streaming inference
+- **Apache Kafka** — real-time message ingestion
+- **Spark MLlib** — Tokenizer, StopWordsRemover, CountVectorizer, IDF, Logistic Regression
+- **Docker** — local Kafka broker
 
-## Data source
+## Dataset
 
-Tweets dataset: [Sentiment dataset with 1 million tweets (Kaggle)](https://www.kaggle.com/datasets/tariqsays/sentiment-dataset-with-1-million-tweets)
+[Sentiment dataset with 1 million tweets (Kaggle)](https://www.kaggle.com/datasets/tariqsays/sentiment-dataset-with-1-million-tweets) —
+937,854 tweets labeled across four sentiment classes: positive, negative,
+uncertainty, litigious.
 
-## How to run
+Download `dataset.csv` and place it in `data/` — not included in this repo due to its size (around 167MB). See [`data/README.md`](data/README.md).
 
-### 1. Start Kafka
+## How to Run
+
+**1. Start Kafka**
 ```bash
 docker compose up -d
 docker ps   # confirm the "kafka" container is Up
 ```
 
-### 2. Stream tweets into Kafka
-In a terminal, from the project folder:
+**2. Stream tweets into Kafka**
 ```bash
-python producer.py --file dataset.csv --delay 2
+pip install -r requirements.txt
+python producer.py --file data/dataset.csv --delay 2
 ```
-Leave this running — it continuously publishes tweets to the `tweets-input`
-topic that the notebook consumes from.
+Leave this running — it continuously publishes tweets to the `tweets-input` topic that the notebook consumes from.
 
-### 3. Run the notebook
-In a separate terminal:
+**3. Run the notebook**
 ```bash
 jupyter lab
 ```
-Open `sentiment_analysis_testing_FIXED.ipynb` and **Run → Run All Cells**.
+Open `sentiment_analysis.ipynb` and **Run → Run All Cells**. It will train the model, evaluate it, then connect to Kafka and classify tweets in real time for around 2 minutes.
 
-The notebook will:
-1. Load and clean the dataset.
-2. Train a Logistic Regression classifier on TF-IDF features (Tokenizer →
-   StopWordsRemover → CountVectorizer → IDF → LogisticRegression).
-3. Evaluate the model (accuracy, precision, recall).
-4. Connect to Kafka and classify tweets in real time via Spark Structured
-   Streaming, printing predictions per micro-batch for ~2 minutes.
-
-### 4. Shut down
+**4. Shut down**
 ```bash
 # Ctrl+C in the producer terminal
 docker compose down
 ```
 
-## Approach
+## Results
 
-- **Batch training**: Spark MLlib pipeline (Tokenizer, StopWordsRemover,
-  CountVectorizer, IDF, LogisticRegression) trained on an 80/20 split of
-  the English-language subset of the dataset.
-- **Streaming inference**: Spark Structured Streaming reads tweets from a
-  Kafka topic (`tweets-input`) and applies the same fitted pipeline to each
-  micro-batch via `foreachBatch`, printing predicted sentiment and class
-  probabilities.
+| Metric              | Score  |
+|----------------------|--------|
+| Accuracy             | 95.6%  |
+| Weighted Precision    | 95.6%  |
+| Weighted Recall       | 95.6%  |
 
-## Evaluation
+Streaming predictions on live, unseen tweets show varying class probabilities across sentiment categories, confirming the model performs genuine per-message inference rather than returning a static output — see
+[`doc/project_report.pdf`](doc/project_report.pdf) for the full evaluation, confusion matrix, and streaming output samples.
 
-Reported via `MulticlassClassificationEvaluator` in the notebook: accuracy,
-weighted precision, and weighted recall on the held-out test set.
+## Documentation
+
+Full report — challenge description, methodology, architecture, and experimental results — in [`doc/project_report.pdf`](doc/project_report.pdf).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
